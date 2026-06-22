@@ -1,0 +1,189 @@
+{
+  "name": "squint",
+  "displayName": "Squint — Comments at a glance",
+  "description": "Collapse verbose comments into one-line AI summaries — source never modified.",
+  "version": "0.1.0",
+  "publisher": "shotmeow",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShotMeow/squint.git"
+  },
+  "homepage": "https://github.com/ShotMeow/squint#readme",
+  "bugs": {
+    "url": "https://github.com/ShotMeow/squint/issues"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "keywords": [
+    "comments",
+    "summary",
+    "ai",
+    "readability",
+    "folding"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:csharp",
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "onLanguage:php",
+    "onLanguage:ruby"
+  ],
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "pretest": "node scripts/copy-wasm.cjs",
+    "test": "node --import tsx --test test/*.test.ts",
+    "vscode:prepublish": "pnpm run package"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "squint.toggle",
+        "title": "Squint: Toggle"
+      },
+      {
+        "command": "squint.clearCache",
+        "title": "Squint: Clear Cache"
+      },
+      {
+        "command": "squint.expandAll",
+        "title": "Squint: Expand All Comments"
+      },
+      {
+        "command": "squint.collapseAll",
+        "title": "Squint: Collapse All Comments"
+      }
+    ],
+    "configuration": {
+      "title": "Squint",
+      "properties": {
+        "squint.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Globally enable or disable Squint."
+        },
+        "squint.languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "typescript",
+            "typescriptreact",
+            "javascript",
+            "javascriptreact",
+            "python",
+            "go",
+            "rust",
+            "java",
+            "csharp",
+            "c",
+            "cpp",
+            "php",
+            "ruby"
+          ],
+          "description": "Language IDs Squint is active for."
+        },
+        "squint.minCommentLines": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "description": "Minimum number of lines for a comment to be summarized."
+        },
+        "squint.minCommentChars": {
+          "type": "number",
+          "default": 200,
+          "minimum": 1,
+          "description": "Minimum number of characters for a comment to be summarized (OR-ed with minCommentLines)."
+        },
+        "squint.displayMode": {
+          "type": "string",
+          "enum": [
+            "fold",
+            "hover",
+            "both"
+          ],
+          "default": "both",
+          "description": "How the original comment is revealed: fold-only, hover-only, or both."
+        },
+        "squint.summaryMaxLength": {
+          "type": "number",
+          "default": 100,
+          "minimum": 20,
+          "description": "Maximum number of characters in a summary."
+        },
+        "squint.summaryLanguage": {
+          "type": "string",
+          "default": "auto",
+          "description": "Language for summaries: \"auto\" keeps the comment's own language; a code like \"ru\", \"en\", \"de\" translates summaries (and the hover) into that language. The original is always shown when the comment is expanded."
+        },
+        "squint.markers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "TODO",
+            "FIXME",
+            "HACK",
+            "XXX",
+            "BUG",
+            "NOTE",
+            "OPTIMIZE",
+            "DEPRECATED"
+          ],
+          "description": "Actionable markers kept visible (and highlighted) in the compact label, e.g. \"TODO ⋯ summary\"."
+        },
+        "squint.debounceMs": {
+          "type": "number",
+          "default": 400,
+          "minimum": 0,
+          "description": "Debounce delay (ms) before recomputing after edits."
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.17.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "tree-sitter-c": "^0.24.1",
+    "tree-sitter-c-sharp": "^0.23.1",
+    "tree-sitter-cpp": "^0.23.4",
+    "tree-sitter-go": "^0.25.0",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-php": "^0.24.2",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-ruby": "^0.23.1",
+    "tree-sitter-rust": "^0.24.0",
+    "tree-sitter-typescript": "^0.23.2",
+    "web-tree-sitter": "^0.26.9"
+  }
+}

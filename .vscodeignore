@@ -1,0 +1,21 @@
+.vscode/**
+.github/**
+src/**
+test/**
+scripts/**
+examples/**
+**/*.ts
+**/*.map
+esbuild.js
+tsconfig.json
+eslint.config.mjs
+pnpm-lock.yaml
+ROADMAP.md
+.gitignore
+
+# Exclude all node_modules…
+node_modules/**
+# …except the runtime dependency that must ship un-bundled.
+!node_modules/web-tree-sitter/**
+
+!dist/**
