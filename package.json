@@ -2,7 +2,7 @@
   "name": "squint",
   "displayName": "Squint — Comments at a glance",
   "description": "Collapse verbose comments into one-line AI summaries — source never modified.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "shotmeow",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -145,6 +145,12 @@
           "type": "boolean",
           "default": false,
           "description": "When a summary language is set, also translate the full comment body shown on hover. Off (default) is much faster — only the one-line summary is translated and the hover shows the original body."
+        },
+        "squint.batchSize": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "description": "Maximum number of comments sent to the model in one request. Large files are split into chunks of this size and summarized in parallel (capped by the global concurrency limit). Smaller = faster, more progressive; larger = fewer requests."
         },
         "squint.markers": {
           "type": "array",

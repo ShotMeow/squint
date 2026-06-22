@@ -16,6 +16,8 @@ export interface SquintSettings {
   readonly model: string;
   /** When translating, also translate the full comment body for the hover (slower). */
   readonly translateBody: boolean;
+  /** Max comments per model request. */
+  readonly batchSize: number;
   /** Actionable markers kept visible in the label (TODO, FIXME, …). */
   readonly markers: readonly string[];
   readonly debounceMs: number;
@@ -35,6 +37,7 @@ export function readSettings(): SquintSettings {
     summaryLanguage: c.get<string>('summaryLanguage', 'auto'),
     model: c.get<string>('model', ''),
     translateBody: c.get<boolean>('translateBody', false),
+    batchSize: c.get<number>('batchSize', 20),
     markers: c.get<string[]>('markers', [...DEFAULT_MARKERS]),
     debounceMs: c.get<number>('debounceMs', 400),
   };

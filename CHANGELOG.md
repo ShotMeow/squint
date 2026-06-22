@@ -2,9 +2,10 @@
 
 ## 0.3.0
 
-- Summarize in bounded chunks (20 comments per request) instead of one giant
-  batch. Summaries now appear progressively in large files, and a slow/oversized
+- Summarize in bounded chunks instead of one giant batch, and run the chunks in
+  parallel. Summaries appear progressively in large files, and a slow/oversized
   response can no longer truncate and wipe out the whole file's summaries.
+- `squint.batchSize` (default 20) — comments per model request / chunk size.
 - Cap concurrent model requests across the extension (max 2), so switching
   through many files no longer fires a request storm.
 

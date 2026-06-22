@@ -20,8 +20,6 @@ import { DocumentStates, type RenderItem } from './state.js';
 
 const MANAGE_MODELS_COMMAND = 'workbench.action.chat.manageLanguageModels';
 const IGNORE_DIRECTIVE = /squint[-:\s]?ignore/i;
-/** Max comments per model request — keeps responses small and avoids truncation. */
-const SUMMARIZE_BATCH_SIZE = 20;
 
 /** Orchestrates parsing, summarization, caching, and rendering. */
 export class Controller implements vscode.Disposable, FoldHost {
@@ -203,32 +201,38 @@ export class Controller implements vscode.Disposable, FoldHost {
       translateBody: this.settings.translateBody,
       preferredModel: this.settings.model,
     };
+    // Split into bounded chunks (one giant request is slow and can truncate the
+    // model's JSON) and run them in parallel. The global limiter caps how many
+    // actually hit the model at once; each chunk renders + caches as it arrives,
+    // so summaries appear progressively and a failed chunk is contained.
+    const batchSize = Math.max(1, this.settings.batchSize);
+    const chunks: SummarizeItem[][] = [];
+    for (let i = 0; i < misses.length; i += batchSize) {
+      chunks.push(misses.slice(i, i + batchSize));
+    }
+
     this.beginLoading();
     try {
-      // Summarize in bounded chunks: one giant request is slow and risks the
-      // model truncating its JSON. Each chunk renders + caches as it arrives, so
-      // summaries appear progressively and a failure is contained to its chunk.
-      for (let i = 0; i < misses.length; i += SUMMARIZE_BATCH_SIZE) {
-        if (token.isCancellationRequested) return;
-        const chunk = misses.slice(i, i + SUMMARIZE_BATCH_SIZE);
-        const fresh = await this.summarizer.summarize(chunk, options, token);
-        if (token.isCancellationRequested) return;
-
-        for (const [id, entry] of fresh) {
-          summaries.set(id, entry);
-          const hash = hashById.get(id);
-          if (hash) void this.cache.set(hash, language, maxLength, entry);
-        }
-        const stillPending = detected.filter((c) => !summaries.has(c.id));
-        this.render(uri, detected, summaries, stillPending, extraFoldLines);
-      }
-    } catch (err) {
+      await Promise.all(
+        chunks.map(async (chunk) => {
+          try {
+            const fresh = await this.summarizer.summarize(chunk, options, token);
+            if (token.isCancellationRequested) return;
+            for (const [id, entry] of fresh) {
+              summaries.set(id, entry);
+              const hash = hashById.get(id);
+              if (hash) void this.cache.set(hash, language, maxLength, entry);
+            }
+            this.render(uri, detected, summaries, detected.filter((c) => !summaries.has(c.id)), extraFoldLines);
+          } catch (err) {
+            if (token.isCancellationRequested) return;
+            if (err instanceof NoModelError) this.notifyNoModel();
+            else this.logger.error('Summarization failed', err);
+          }
+        }),
+      );
       if (token.isCancellationRequested) return;
-      if (err instanceof NoModelError) {
-        this.notifyNoModel();
-      } else {
-        this.logger.error('Summarization failed', err);
-      }
+      // Clear any leftover loading hints (omitted/failed comments show original).
       this.render(uri, detected, summaries, [], extraFoldLines);
     } finally {
       this.endLoading();
