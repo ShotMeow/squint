@@ -12,6 +12,8 @@ export interface SquintSettings {
   readonly summaryMaxLength: number;
   /** "auto" = comment's own language; otherwise a language code (e.g. "ru"). */
   readonly summaryLanguage: string;
+  /** Preferred model (matched against id/family/name); empty = auto-pick. */
+  readonly model: string;
   /** Actionable markers kept visible in the label (TODO, FIXME, …). */
   readonly markers: readonly string[];
   readonly debounceMs: number;
@@ -29,6 +31,7 @@ export function readSettings(): SquintSettings {
     displayMode: c.get<DisplayMode>('displayMode', 'both'),
     summaryMaxLength: c.get<number>('summaryMaxLength', 100),
     summaryLanguage: c.get<string>('summaryLanguage', 'auto'),
+    model: c.get<string>('model', ''),
     markers: c.get<string[]>('markers', [...DEFAULT_MARKERS]),
     debounceMs: c.get<number>('debounceMs', 400),
   };

@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.0.2
+## 0.2.0
+
+- `squint.model` — pick the language model by id/family/name substring
+  (e.g. `gpt-5 mini`, `haiku`); empty = auto-pick. Available model names are
+  logged to the Squint output channel.
+
+## 0.1.0
 
 - Languages: added TSX/JSX, Java, C#, C, C++, PHP, Ruby (13 total).
 - Translation: `squint.summaryLanguage` (~30 languages). In translate mode every

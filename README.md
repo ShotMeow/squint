@@ -49,6 +49,7 @@ TypeScript, TSX, JavaScript, JSX, Python, Go, Rust, Java, C#, C, C++, PHP, Ruby.
 | `squint.displayMode` | `both` | `fold` \| `hover` \| `both`. |
 | `squint.summaryMaxLength` | `100` | Max characters in a summary. |
 | `squint.summaryLanguage` | `auto` | `auto` (comment's language) or a code like `ru`. |
+| `squint.model` | `` | Preferred model by id/family/name (e.g. `gpt-5 mini`); empty = auto. |
 | `squint.markers` | TODO, … | Markers kept visible and highlighted in the label. |
 | `squint.debounceMs` | `400` | Debounce before recompute on edits. |
 

@@ -28,6 +28,7 @@ export interface Summarizer {
     items: readonly SummarizeItem[],
     maxLength: number,
     language: string,
+    preferredModel: string,
     token: CancellationLike,
   ): Promise<Map<string, SummaryEntry>>;
 }

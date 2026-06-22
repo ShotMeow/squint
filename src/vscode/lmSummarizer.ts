@@ -20,34 +20,41 @@ export class LMSummarizer implements Summarizer {
 
   constructor(private readonly logger: Logger) {}
 
-  private order<T extends { id: string }>(models: readonly T[]): T[] {
-    if (!this.lastGoodModelId) return [...models];
-    const preferred = models.filter((m) => m.id === this.lastGoodModelId);
-    const rest = models.filter((m) => m.id !== this.lastGoodModelId);
-    return [...preferred, ...rest];
+  /** Order models: the configured preference first, then the last good one. */
+  private order(models: readonly vscode.LanguageModelChat[], preferred: string): vscode.LanguageModelChat[] {
+    const query = preferred.trim().toLowerCase();
+    const matchesPreferred = (m: vscode.LanguageModelChat): boolean =>
+      query.length > 0 && [m.id, m.family, m.name].some((v) => v?.toLowerCase().includes(query));
+    const score = (m: vscode.LanguageModelChat): number => {
+      if (matchesPreferred(m)) return 0;
+      if (m.id === this.lastGoodModelId) return 1;
+      return 2;
+    };
+    return [...models].sort((a, b) => score(a) - score(b));
   }
 
   async summarize(
     items: readonly SummarizeItem[],
     maxLength: number,
     language: string,
+    preferredModel: string,
     token: CancellationLike,
   ): Promise<Map<string, SummaryEntry>> {
     if (items.length === 0) return new Map();
 
     const models = await vscode.lm.selectChatModels();
-    this.logger.info(`selectChatModels returned ${models?.length ?? 0} model(s)`);
     if (!models || models.length === 0) {
       throw new NoModelError();
     }
+    this.logger.info(`Available models: ${models.map((m) => `${m.name} [${m.family}]`).join(', ')}`);
 
     const { system, user } = buildSummaryPrompt(items, maxLength, language);
     const messages = [vscode.LanguageModelChatMessage.User(`${system}\n\n${user}`)];
     const ids = new Set(items.map((i) => i.id));
 
     // Some BYOK models return an empty stream; fall through to the next one
-    // until one actually produces summaries. The last good model is tried first.
-    const ordered = this.order(models);
+    // until one produces summaries. Preferred/last-good models are tried first.
+    const ordered = this.order(models, preferredModel);
     const attempts = Math.min(ordered.length, MAX_MODEL_ATTEMPTS);
     for (let i = 0; i < attempts; i++) {
       if (token.isCancellationRequested) return new Map();

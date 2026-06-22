@@ -2,7 +2,7 @@
   "name": "squint",
   "displayName": "Squint — Comments at a glance",
   "description": "Collapse verbose comments into one-line AI summaries — source never modified.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "shotmeow",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -135,6 +135,11 @@
           "type": "string",
           "default": "auto",
           "description": "Language for summaries: \"auto\" keeps the comment's own language; a code like \"ru\", \"en\", \"de\" translates summaries (and the hover) into that language. The original is always shown when the comment is expanded."
+        },
+        "squint.model": {
+          "type": "string",
+          "default": "",
+          "description": "Preferred language model, matched against the model's id, family, or name (e.g. \"gpt-5 mini\", \"haiku\"). Empty = auto-pick the first working model. Available model names are logged to the Squint output channel."
         },
         "squint.markers": {
           "type": "array",
