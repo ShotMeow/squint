@@ -13,9 +13,9 @@ pnpm-lock.yaml
 ROADMAP.md
 .gitignore
 
-# Exclude all node_modules…
+# Everything runtime is bundled into dist/ by esbuild.
 node_modules/**
-# …except the runtime dependency that must ship un-bundled.
-!node_modules/web-tree-sitter/**
 
 !dist/**
+# …but not source maps (the !dist re-include above would otherwise pull them in).
+dist/**/*.map

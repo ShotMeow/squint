@@ -22,10 +22,12 @@ async function main() {
     target: 'node18',
     sourcemap: !production,
     minify: production,
-    // `vscode` is provided by the host. `web-tree-sitter` is kept external and
-    // shipped as-is: bundling its emscripten glue breaks wasm loading (the ESM
-    // variant relies on import.meta.url, which is undefined once bundled to CJS).
-    external: ['vscode', 'web-tree-sitter'],
+    // `vscode` is provided by the host. web-tree-sitter is bundled from its CJS
+    // build (which uses __dirname, not import.meta.url, so it survives bundling);
+    // the wasm is handed in as bytes at runtime, so no files need to ship beside
+    // it. This keeps the extension dependency-free for packaging.
+    external: ['vscode'],
+    alias: { 'web-tree-sitter': require.resolve('web-tree-sitter') },
     logLevel: 'info',
   });
 
