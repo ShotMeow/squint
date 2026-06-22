@@ -2,7 +2,7 @@
   "name": "squint",
   "displayName": "Squint — Comments at a glance",
   "description": "Collapse verbose comments into one-line AI summaries — source never modified.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "shotmeow",
   "license": "MIT",
   "icon": "media/icon.png",
