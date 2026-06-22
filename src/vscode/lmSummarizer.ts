@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Semaphore } from '../core/semaphore.js';
 import { buildSummaryPrompt } from '../core/summarize/prompt.js';
 import { parseSummaryResponse } from '../core/summarize/parse.js';
 import {
@@ -13,11 +14,15 @@ import type { Logger } from './logger.js';
 
 /** How many models to try before giving up (some BYOK models stream nothing). */
 const MAX_MODEL_ATTEMPTS = 4;
+/** Max concurrent model requests across the whole extension. */
+const MAX_CONCURRENT_REQUESTS = 2;
 
 /** Summarizer backed by the user's BYOK model via `vscode.lm`. */
 export class LMSummarizer implements Summarizer {
   /** Last model that actually produced output — tried first next time. */
   private lastGoodModelId: string | undefined;
+  /** Caps concurrent requests so many open files don't storm the model. */
+  private readonly limiter = new Semaphore(MAX_CONCURRENT_REQUESTS);
 
   constructor(private readonly logger: Logger) {}
 
@@ -59,36 +64,39 @@ export class LMSummarizer implements Summarizer {
     // Some BYOK models return an empty stream; fall through to the next one
     // until one produces summaries. Preferred/last-good models are tried first.
     const ordered = this.order(models, options.preferredModel);
-    const attempts = Math.min(ordered.length, MAX_MODEL_ATTEMPTS);
-    for (let i = 0; i < attempts; i++) {
-      if (token.isCancellationRequested) return new Map();
-      const model = ordered[i];
-      this.logger.info(
-        `Attempt ${i + 1}/${attempts}: ${model.vendor}/${model.family} (${model.id}) for ${items.length} item(s)`,
-      );
-      try {
-        const response = await model.sendRequest(messages, {}, token as vscode.CancellationToken);
-        let text = '';
-        for await (const chunk of response.text) {
-          text += chunk;
-        }
-        const parsed = parseSummaryResponse(text, ids, options.maxLength);
-        this.logger.info(`  → ${text.length} chars, parsed ${parsed.size} summaries`);
-        if (parsed.size > 0) {
-          this.lastGoodModelId = model.id;
-          return parsed;
-        }
-      } catch (err) {
+
+    // Gate the actual requests through the shared limiter (caps concurrency).
+    return this.limiter.run(async () => {
+      const attempts = Math.min(ordered.length, MAX_MODEL_ATTEMPTS);
+      for (let i = 0; i < attempts; i++) {
         if (token.isCancellationRequested) return new Map();
-        if (err instanceof vscode.LanguageModelError) {
-          this.logger.error(`  model ${model.id} failed`, err);
-        } else {
-          this.logger.error(`  model ${model.id} unexpected error`, err);
+        const model = ordered[i];
+        this.logger.info(
+          `Attempt ${i + 1}/${attempts}: ${model.vendor}/${model.family} (${model.id}) for ${items.length} item(s)`,
+        );
+        try {
+          const response = await model.sendRequest(messages, {}, token as vscode.CancellationToken);
+          let text = '';
+          for await (const chunk of response.text) {
+            text += chunk;
+          }
+          const parsed = parseSummaryResponse(text, ids, options.maxLength);
+          this.logger.info(`  → ${text.length} chars, parsed ${parsed.size} summaries`);
+          if (parsed.size > 0) {
+            this.lastGoodModelId = model.id;
+            return parsed;
+          }
+        } catch (err) {
+          if (token.isCancellationRequested) return new Map();
+          if (err instanceof vscode.LanguageModelError) {
+            this.logger.error(`  model ${model.id} failed`, err);
+          } else {
+            this.logger.error(`  model ${model.id} unexpected error`, err);
+          }
         }
       }
-    }
-
-    this.logger.info('No model produced summaries.');
-    return new Map();
+      this.logger.info('No model produced summaries.');
+      return new Map();
+    });
   }
 }

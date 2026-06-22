@@ -5,6 +5,8 @@
 - Summarize in bounded chunks (20 comments per request) instead of one giant
   batch. Summaries now appear progressively in large files, and a slow/oversized
   response can no longer truncate and wipe out the whole file's summaries.
+- Cap concurrent model requests across the extension (max 2), so switching
+  through many files no longer fires a request storm.
 
 ## 0.2.0
 
