@@ -60,8 +60,9 @@ export function buildSummaryPrompt(
   items: readonly SummarizeItem[],
   maxLength: number,
   language: string,
+  translateBody = false,
 ): BuiltPrompt {
-  const translate = language !== 'auto';
+  const translate = language !== 'auto' && translateBody;
 
   const system = [
     'You are a code-comment summarizer.',

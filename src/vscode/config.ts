@@ -14,6 +14,8 @@ export interface SquintSettings {
   readonly summaryLanguage: string;
   /** Preferred model (matched against id/family/name); empty = auto-pick. */
   readonly model: string;
+  /** When translating, also translate the full comment body for the hover (slower). */
+  readonly translateBody: boolean;
   /** Actionable markers kept visible in the label (TODO, FIXME, …). */
   readonly markers: readonly string[];
   readonly debounceMs: number;
@@ -32,6 +34,7 @@ export function readSettings(): SquintSettings {
     summaryMaxLength: c.get<number>('summaryMaxLength', 100),
     summaryLanguage: c.get<string>('summaryLanguage', 'auto'),
     model: c.get<string>('model', ''),
+    translateBody: c.get<boolean>('translateBody', false),
     markers: c.get<string[]>('markers', [...DEFAULT_MARKERS]),
     debounceMs: c.get<number>('debounceMs', 400),
   };

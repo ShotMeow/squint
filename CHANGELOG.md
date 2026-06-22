@@ -5,6 +5,9 @@
 - `squint.model` — pick the language model by id/family/name substring
   (e.g. `gpt-5 mini`, `haiku`); empty = auto-pick. Available model names are
   logged to the Squint output channel.
+- `squint.translateBody` (default off) — full-body translation for the hover is
+  now opt-in. By default only the one-line summary is translated, which is much
+  faster; the hover shows the original body. Turn on for a fully translated hover.
 
 ## 0.1.0
 

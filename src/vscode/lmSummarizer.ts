@@ -5,6 +5,7 @@ import {
   NoModelError,
   type CancellationLike,
   type SummarizeItem,
+  type SummarizeOptions,
   type Summarizer,
   type SummaryEntry,
 } from '../core/summarize/types.js';
@@ -35,9 +36,7 @@ export class LMSummarizer implements Summarizer {
 
   async summarize(
     items: readonly SummarizeItem[],
-    maxLength: number,
-    language: string,
-    preferredModel: string,
+    options: SummarizeOptions,
     token: CancellationLike,
   ): Promise<Map<string, SummaryEntry>> {
     if (items.length === 0) return new Map();
@@ -48,13 +47,18 @@ export class LMSummarizer implements Summarizer {
     }
     this.logger.info(`Available models: ${models.map((m) => `${m.name} [${m.family}]`).join(', ')}`);
 
-    const { system, user } = buildSummaryPrompt(items, maxLength, language);
+    const { system, user } = buildSummaryPrompt(
+      items,
+      options.maxLength,
+      options.language,
+      options.translateBody,
+    );
     const messages = [vscode.LanguageModelChatMessage.User(`${system}\n\n${user}`)];
     const ids = new Set(items.map((i) => i.id));
 
     // Some BYOK models return an empty stream; fall through to the next one
     // until one produces summaries. Preferred/last-good models are tried first.
-    const ordered = this.order(models, preferredModel);
+    const ordered = this.order(models, options.preferredModel);
     const attempts = Math.min(ordered.length, MAX_MODEL_ATTEMPTS);
     for (let i = 0; i < attempts; i++) {
       if (token.isCancellationRequested) return new Map();
@@ -68,7 +72,7 @@ export class LMSummarizer implements Summarizer {
         for await (const chunk of response.text) {
           text += chunk;
         }
-        const parsed = parseSummaryResponse(text, ids, maxLength);
+        const parsed = parseSummaryResponse(text, ids, options.maxLength);
         this.logger.info(`  → ${text.length} chars, parsed ${parsed.size} summaries`);
         if (parsed.size > 0) {
           this.lastGoodModelId = model.id;

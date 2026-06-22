@@ -141,6 +141,11 @@
           "default": "",
           "description": "Preferred language model, matched against the model's id, family, or name (e.g. \"gpt-5 mini\", \"haiku\"). Empty = auto-pick the first working model. Available model names are logged to the Squint output channel."
         },
+        "squint.translateBody": {
+          "type": "boolean",
+          "default": false,
+          "description": "When a summary language is set, also translate the full comment body shown on hover. Off (default) is much faster — only the one-line summary is translated and the hover shows the original body."
+        },
         "squint.markers": {
           "type": "array",
           "items": {

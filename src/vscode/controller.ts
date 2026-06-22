@@ -197,7 +197,16 @@ export class Controller implements vscode.Disposable, FoldHost {
 
     this.beginLoading();
     try {
-      const fresh = await this.summarizer.summarize(misses, maxLength, language, this.settings.model, token);
+      const fresh = await this.summarizer.summarize(
+        misses,
+        {
+          maxLength,
+          language,
+          translateBody: this.settings.translateBody,
+          preferredModel: this.settings.model,
+        },
+        token,
+      );
       if (token.isCancellationRequested) return;
 
       for (const [id, entry] of fresh) {

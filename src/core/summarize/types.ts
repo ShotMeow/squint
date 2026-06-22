@@ -17,6 +17,16 @@ export interface SummaryEntry {
   readonly body?: string;
 }
 
+export interface SummarizeOptions {
+  readonly maxLength: number;
+  /** "auto" or a target language code for the summary. */
+  readonly language: string;
+  /** Also translate the full body (slower); only relevant when translating. */
+  readonly translateBody: boolean;
+  /** Preferred model id/family/name substring; empty = auto. */
+  readonly preferredModel: string;
+}
+
 /** Abstraction over the LLM. The vscode layer implements this with vscode.lm. */
 export interface Summarizer {
   /**
@@ -26,9 +36,7 @@ export interface Summarizer {
    */
   summarize(
     items: readonly SummarizeItem[],
-    maxLength: number,
-    language: string,
-    preferredModel: string,
+    options: SummarizeOptions,
     token: CancellationLike,
   ): Promise<Map<string, SummaryEntry>>;
 }
