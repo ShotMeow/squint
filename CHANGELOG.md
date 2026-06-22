@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Summarize in bounded chunks (20 comments per request) instead of one giant
+  batch. Summaries now appear progressively in large files, and a slow/oversized
+  response can no longer truncate and wipe out the whole file's summaries.
+
 ## 0.2.0
 
 - `squint.model` — pick the language model by id/family/name substring

@@ -20,6 +20,8 @@ import { DocumentStates, type RenderItem } from './state.js';
 
 const MANAGE_MODELS_COMMAND = 'workbench.action.chat.manageLanguageModels';
 const IGNORE_DIRECTIVE = /squint[-:\s]?ignore/i;
+/** Max comments per model request — keeps responses small and avoids truncation. */
+const SUMMARIZE_BATCH_SIZE = 20;
 
 /** Orchestrates parsing, summarization, caching, and rendering. */
 export class Controller implements vscode.Disposable, FoldHost {
@@ -195,26 +197,31 @@ export class Controller implements vscode.Disposable, FoldHost {
 
     if (misses.length === 0) return;
 
+    const options = {
+      maxLength,
+      language,
+      translateBody: this.settings.translateBody,
+      preferredModel: this.settings.model,
+    };
     this.beginLoading();
     try {
-      const fresh = await this.summarizer.summarize(
-        misses,
-        {
-          maxLength,
-          language,
-          translateBody: this.settings.translateBody,
-          preferredModel: this.settings.model,
-        },
-        token,
-      );
-      if (token.isCancellationRequested) return;
+      // Summarize in bounded chunks: one giant request is slow and risks the
+      // model truncating its JSON. Each chunk renders + caches as it arrives, so
+      // summaries appear progressively and a failure is contained to its chunk.
+      for (let i = 0; i < misses.length; i += SUMMARIZE_BATCH_SIZE) {
+        if (token.isCancellationRequested) return;
+        const chunk = misses.slice(i, i + SUMMARIZE_BATCH_SIZE);
+        const fresh = await this.summarizer.summarize(chunk, options, token);
+        if (token.isCancellationRequested) return;
 
-      for (const [id, entry] of fresh) {
-        summaries.set(id, entry);
-        const hash = hashById.get(id);
-        if (hash) void this.cache.set(hash, language, maxLength, entry);
+        for (const [id, entry] of fresh) {
+          summaries.set(id, entry);
+          const hash = hashById.get(id);
+          if (hash) void this.cache.set(hash, language, maxLength, entry);
+        }
+        const stillPending = detected.filter((c) => !summaries.has(c.id));
+        this.render(uri, detected, summaries, stillPending, extraFoldLines);
       }
-      this.render(uri, detected, summaries, [], extraFoldLines);
     } catch (err) {
       if (token.isCancellationRequested) return;
       if (err instanceof NoModelError) {
