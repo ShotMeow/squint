@@ -21,6 +21,8 @@ const MAX_CONCURRENT_REQUESTS = 2;
 export class LMSummarizer implements Summarizer {
   /** Last model that actually produced output — tried first next time. */
   private lastGoodModelId: string | undefined;
+  /** Signature of the last logged model list, to avoid logging it every request. */
+  private lastModelsSignature = '';
   /** Caps concurrent requests so many open files don't storm the model. */
   private readonly limiter = new Semaphore(MAX_CONCURRENT_REQUESTS);
 
@@ -50,7 +52,12 @@ export class LMSummarizer implements Summarizer {
     if (!models || models.length === 0) {
       throw new NoModelError();
     }
-    this.logger.info(`Available models: ${models.map((m) => `${m.name} [${m.family}]`).join(', ')}`);
+    // Log the model list only when it changes, not on every chunk request.
+    const signature = models.map((m) => `${m.name} [${m.family}]`).join(', ');
+    if (signature !== this.lastModelsSignature) {
+      this.lastModelsSignature = signature;
+      this.logger.info(`Available models: ${signature}`);
+    }
 
     const { system, user } = buildSummaryPrompt(
       items,
