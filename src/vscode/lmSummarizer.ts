@@ -28,13 +28,20 @@ export class LMSummarizer implements Summarizer {
 
   constructor(private readonly logger: Logger) {}
 
-  /** Order models: the configured preference first, then the last good one. */
+  /**
+   * Order models. User preference first; then the last good model; real models
+   * before aggregator/router models ("…-picker", "router", "Auto"), which proxy
+   * to other models and add latency.
+   */
   private order(models: readonly vscode.LanguageModelChat[], preferred: string): vscode.LanguageModelChat[] {
     const query = preferred.trim().toLowerCase();
+    const hay = (m: vscode.LanguageModelChat): string => `${m.id} ${m.family} ${m.name}`.toLowerCase();
     const matchesPreferred = (m: vscode.LanguageModelChat): boolean =>
-      query.length > 0 && [m.id, m.family, m.name].some((v) => v?.toLowerCase().includes(query));
+      query.length > 0 && hay(m).includes(query);
+    const isAggregator = (m: vscode.LanguageModelChat): boolean => /picker|router|\bauto\b/.test(hay(m));
     const score = (m: vscode.LanguageModelChat): number => {
       if (matchesPreferred(m)) return 0;
+      if (isAggregator(m)) return 3; // routers add latency → try last
       if (m.id === this.lastGoodModelId) return 1;
       return 2;
     };
